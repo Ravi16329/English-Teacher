@@ -1,0 +1,190 @@
+<div class="container">
+  <header>
+    <h1><i class="fas fa-robot"></i> English Voice Tutor</h1>
+    <p class="subtitle">Practice speaking and listening with AI-powered conversations</p>
+  </header>
+
+  <div *ngIf="errorMessage" class="error-message">
+    <i class="fas fa-exclamation-triangle"></i> {{ errorMessage }}
+  </div>
+  <div *ngIf="successMessage" class="success-message">
+    <i class="fas fa-check-circle"></i> {{ successMessage }}
+  </div>
+
+  <div class="main-content">
+    <!-- Chat Section -->
+    <div class="chat-section">
+      <div class="mode-tabs">
+        <button class="tab-button" [class.active]="currentMode === 'conversation'" (click)="switchMode('conversation')">
+          <i class="fas fa-comments"></i> Conversation
+        </button>
+        <button class="tab-button" [class.active]="currentMode === 'history'" (click)="switchMode('history')">
+          <i class="fas fa-history"></i> History
+        </button>
+      </div>
+
+      <!-- Conversation Mode -->
+      <div *ngIf="currentMode === 'conversation'">
+        <div class="topic-selector">
+          <label for="topic"><i class="fas fa-bookmark"></i> Choose Topic:</label>
+          <select id="topic" [(ngModel)]="selectedTopic" (change)="startNewConversation()">
+            <option value="daily-life">Daily Life</option>
+            <option value="work">Work & Business</option>
+            <option value="travel">Travel</option>
+            <option value="food">Food & Restaurants</option>
+            <option value="hobbies">Hobbies & Interests</option>
+            <option value="random">Random Topics</option>
+          </select>
+        </div>
+
+        <div class="status" [ngClass]="conversationStatus">
+          <span *ngIf="isListening">
+            <span class="recording-indicator"></span>
+            <i class="fas fa-microphone"></i> Listening...
+          </span>
+          <span *ngIf="isSpeaking">
+            <i class="fas fa-volume-up"></i> Speaking...
+          </span>
+          <span *ngIf="!isListening && !isSpeaking">
+            <i class="fas fa-pause"></i> Ready to start
+          </span>
+        </div>
+
+        <div class="conversation-area" id="conversationArea">
+          <div *ngIf="currentConversation?.messages?.length === 0" class="empty-state">
+            <i class="fas fa-comment-dots"></i>
+            <p>Start speaking to begin your English practice session!</p>
+          </div>
+
+          <div *ngFor="let message of currentConversation?.messages" class="message" [ngClass]="{'user-message': message.type==='user','ai-message': message.type==='ai'}">
+            <div class="message-content">
+              <p>{{ message.text }}</p>
+
+              <div *ngIf="message.correction" class="correction">
+                <i class="fas fa-lightbulb"></i> <strong>Suggestion:</strong> {{ message.correction }}
+              </div>
+
+              <div *ngIf="message.pronunciationFeedback" class="pronunciation-feedback"
+                   [ngClass]="{'feedback-positive': message.pronunciationScore > 70, 'feedback-needs-work': message.pronunciationScore <= 70}">
+                <i class="fas fa-assessment"></i>
+                Pronunciation Score: {{ message.pronunciationScore }}%
+                <br>{{ message.pronunciationFeedback }}
+              </div>
+
+              <div *ngIf="message.audioUrl" style="margin-top:10px;">
+                <audio controls [src]="safeUrl(message.audioUrl)"></audio>
+              </div>
+            </div>
+            <small style="color:#6c757d; font-size:0.8rem;">
+              {{ message.timestamp | date:'h:mm:ss a' }}
+            </small>
+          </div>
+        </div>
+
+        <div class="controls">
+          <button class="control-button start-button" (click)="startListening()"
+                  [disabled]="isListening || isSpeaking" *ngIf="!isConversationActive">
+            <i class="fas fa-microphone"></i> Start Speaking
+          </button>
+          <button class="control-button stop-button" (click)="stopListening()" *ngIf="isListening">
+            <i class="fas fa-stop"></i> Stop
+          </button>
+          <button class="control-button pause-button" (click)="pauseConversation()" *ngIf="isConversationActive && !isListening">
+            <i class="fas fa-pause"></i> Pause
+          </button>
+          <button class="control-button" (click)="endConversation()" *ngIf="isConversationActive"
+                  style="background: linear-gradient(135deg, #6c757d, #495057); color: white;">
+            <i class="fas fa-sign-out-alt"></i> End Session
+          </button>
+        </div>
+      </div>
+
+      <!-- History Mode -->
+      <div *ngIf="currentMode === 'history'">
+        <h3 style="margin-bottom:20px; color:#764ba2;"><i class="fas fa-chart-line"></i> Conversation Review</h3>
+
+        <div class="stats-grid" *ngIf="selectedHistoryConversation">
+          <div class="stat-card">
+            <div class="stat-value">{{ (selectedHistoryConversation.messages?.length || 0) / 2 }}</div>
+            <div class="stat-label">Exchanges</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">{{ calculateSessionDuration(selectedHistoryConversation) }}</div>
+            <div class="stat-label">Duration</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">{{ getAveragePronunciationScore(selectedHistoryConversation) }}%</div>
+            <div class="stat-label">Avg Score</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">{{ getCorrectionCount(selectedHistoryConversation) }}</div>
+            <div class="stat-label">Corrections</div>
+          </div>
+        </div>
+
+        <div class="conversation-area" style="height:500px;" *ngIf="selectedHistoryConversation">
+          <div *ngFor="let message of selectedHistoryConversation.messages" class="message" [ngClass]="{'user-message': message.type==='user','ai-message': message.type==='ai'}">
+            <div class="message-content">
+              <p>{{ message.text }}</p>
+
+              <div *ngIf="message.correction" class="correction">
+                <i class="fas fa-lightbulb"></i> <strong>Correction:</strong> {{ message.correction }}
+              </div>
+
+              <div *ngIf="message.pronunciationFeedback" class="pronunciation-feedback"
+                   [ngClass]="{'feedback-positive': message.pronunciationScore > 70, 'feedback-needs-work': message.pronunciationScore <= 70}">
+                <i class="fas fa-assessment"></i> Pronunciation: {{ message.pronunciationScore }}%
+              </div>
+
+              <div *ngIf="message.audioUrl" style="margin-top:10px;">
+                <audio controls [src]="safeUrl(message.audioUrl)"></audio>
+              </div>
+            </div>
+            <small style="color:#6c757d; font-size:0.8rem;">
+              {{ message.timestamp | date:'MMM d, y h:mm:ss a' }}
+            </small>
+          </div>
+        </div>
+
+        <div *ngIf="!selectedHistoryConversation" class="empty-state">
+          <i class="fas fa-history"></i>
+          <p>Select a conversation from the history panel to review</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- History Panel -->
+    <div class="history-section">
+      <h3 style="margin-bottom:20px; color:#764ba2;"><i class="fas fa-history"></i> Conversation History</h3>
+
+      <input type="text" class="search-box" placeholder="Search conversations..." [(ngModel)]="searchQuery" (ngModelChange)="filterHistory()">
+
+      <div style="max-height:500px; overflow-y:auto;">
+        <div *ngIf="filteredHistory.length === 0" class="empty-state">
+          <i class="fas fa-inbox"></i>
+          <p>No conversations yet</p>
+        </div>
+
+        <div *ngFor="let conversation of filteredHistory" class="history-item" [class.active]="selectedHistoryConversation===conversation" (click)="selectHistoryConversation(conversation)">
+          <div class="history-header">
+            <span class="history-date">{{ conversation.startTime | date:'MMM d, y' }}</span>
+            <span class="history-duration">{{ calculateSessionDuration(conversation) }}</span>
+          </div>
+          <div class="history-preview">{{ getConversationPreview(conversation) }}</div>
+          <div class="history-stats">
+            <span><i class="fas fa-comments"></i> {{ (conversation.messages?.length || 0) / 2 }} exchanges</span>
+            <span><i class="fas fa-star"></i> {{ getAveragePronunciationScore(conversation) }}% avg</span>
+            <span class="difficulty-indicator difficulty-{{ conversation.difficulty }}">{{ conversation.difficulty }}</span>
+          </div>
+          <div style="margin-top:10px;">
+            <small style="color:#6c757d;"><i class="fas fa-tag"></i> {{ conversation.topic }}</small>
+          </div>
+        </div>
+      </div>
+
+      <button class="control-button stop-button" style="width:100%; margin-top:20px;" (click)="clearHistory()" *ngIf="conversationHistory.length > 0">
+        <i class="fas fa-trash"></i> Clear All History
+      </button>
+    </div>
+  </div>
+</div>
