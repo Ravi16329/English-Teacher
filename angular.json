@@ -13,8 +13,8 @@
         "build": {
           "builder": "@angular/build:application",
           "options": {
-            "outputPath": "docs",
-            "baseHref": "/English-Guide/",
+            "outputPath": "dist/English-Teacher/browser",
+            "baseHref": "/English-Teacher/",
             "browser": "src/main.ts",
             "polyfills": [
               "zone.js"
