@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/types.ts","./src/vite-env.d.ts","./src/api/tutorapi.ts","./src/components/conversationview.tsx","./src/components/messagebubble.tsx","./src/components/statusbar.tsx","./src/components/topicselector.tsx","./src/components/tutor.tsx","./src/hooks/usespeechrecognition.ts","./src/hooks/usespeechsynthesis.ts"],"version":"5.9.3"}

@@ -1,0 +1,55 @@
+:root {
+  --color-bg: #f2f5f3;
+  --color-surface: #ffffff;
+  --color-ink: #1c2b2a;
+  --color-ink-soft: #4c5d5b;
+  --color-primary: #1c3a4b;
+  --color-primary-soft: #325a70;
+  --color-accent: #e08a4b;
+  --color-accent-soft: #f6dcc3;
+  --color-correction: #bd453c;
+  --color-correction-soft: #f7dcda;
+  --color-success: #3f7d58;
+  --color-border: #dde3df;
+
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-primary-soft);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
