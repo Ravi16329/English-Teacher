@@ -1,111 +1,145 @@
-# Ravi — English Speaking Tutor
+# English Speaking Tutor
 
-A speaking-practice web app: the learner talks out loud, an AI tutor replies in
-natural conversation, corrects grammar mistakes, and gives pronunciation/fluency
-tips — all voiced back using the browser's text-to-speech.
+An AI-powered English speaking practice web application that helps learners improve their English through interactive conversations, grammar corrections, pronunciation tips, and voice-based interaction.
 
-- **`frontend/`** — React + TypeScript (Vite). Handles the UI, microphone input
-  and voice output via the browser's Web Speech API, and talks to the backend
-  over HTTP.
-- **`backend/`** — Java 17 + Spring Boot. A REST API that calls an LLM
-  (via any OpenAI-compatible chat completions endpoint — this project runs on
-  [Groq's free tier](https://console.groq.com) by default) to generate the
-  tutor's replies, grammar corrections, and pronunciation tips.
+## Live Demo
 
-By design, **nothing is persisted** — there's no login and no database. Each
-browser session is a self-contained conversation held in React state; refreshing
-the page starts a fresh conversation.
+**Frontend:** https://ravi16329.github.io/English-Teacher/
+
+**Backend:** https://english-teacher-b1a7.onrender.com
+
+> The backend is hosted on Render's free tier and may take a short time to wake up after a period of inactivity.
 
 ---
 
-## How it works
+## Features
 
-1. The learner picks a topic and level in the sidebar and taps the mic button.
-2. The browser's `SpeechRecognition` API transcribes their speech to text.
-3. The transcript is sent to `POST /api/tutor/chat` along with the topic, level,
-   and the conversation so far.
-4. The Spring Boot backend builds a system prompt instructing the LLM to act as
-   a tutor, and asks it for a strict JSON reply: `{ reply, correction,
-   correctionExplanation, pronunciationTip }`.
-5. The frontend renders the tutor's reply as a chat bubble, shows the correction
-   and tip as small callouts under the learner's own message, and speaks the
-   reply aloud with `SpeechSynthesis`.
+- AI-powered English conversation practice
+- Topic and difficulty-level selection
+- Speech-to-text using the browser microphone
+- AI-generated grammar corrections with explanations
+- Pronunciation and fluency tips
+- Text-to-speech for AI responses
+- Interactive chat interface
+- No login and no database — conversation state is kept in memory for the current browser session only
 
-```
-┌─────────────┐   speech-to-text    ┌──────────────────┐   HTTPS JSON    ┌───────────────┐
-│   Browser   │ ──────────────────▶ │  React frontend  │ ──────────────▶ │ Spring Boot   │
-│  mic / TTS  │ ◀────────────────── │   (Vite, :5173)  │ ◀────────────── │  API (:8080)  │
-└─────────────┘   text-to-speech    └──────────────────┘                 └───────┬───────┘
-                                                                                  │ chat completions
-                                                                                  ▼
-                                                                          ┌───────────────┐
-                                                                          │  LLM provider │
-                                                                          │ (Groq, free)  │
-                                                                          └───────────────┘
+---
+
+## Technology Stack
+
+**Frontend:** React, TypeScript, Vite, Web Speech API
+
+**Backend:** Java 17, Spring Boot 3 (Web, WebFlux, Validation), Maven, REST API
+
+**AI:** Groq API (OpenAI-compatible Chat Completions), model `openai/gpt-oss-20b`
+
+**Deployment:** GitHub Pages (frontend) + GitHub Actions, Render (backend, via Docker)
+
+---
+
+## How It Works
+
+1. The learner selects a conversation topic and difficulty level.
+2. The learner speaks using the microphone; the browser's Speech Recognition API converts speech to text.
+3. The frontend sends the text and conversation history to the Spring Boot backend.
+4. The backend builds a tutor prompt and sends it to the Groq AI model.
+5. The AI generates a tutor reply, a grammar correction, a correction explanation, and a pronunciation tip.
+6. The backend returns this to the frontend, which displays it and reads the reply aloud with Speech Synthesis.
+
+```text
+                    USER
+                     │
+                     ▼
+            ┌─────────────────┐
+            │  React Frontend │
+            │  GitHub Pages   │
+            └────────┬────────┘
+                      │ HTTPS
+                      ▼
+            ┌─────────────────┐
+            │ Spring Boot API │
+            │     Render      │
+            └────────┬────────┘
+                      │ Chat Completions
+                      ▼
+            ┌─────────────────┐
+            │    Groq LLM     │
+            └─────────────────┘
 ```
 
 ---
 
-## Project structure
+## Project Structure
 
-```
-english-tutor/
-├── backend/                         Spring Boot API
-│   ├── pom.xml
-│   └── src/main/java/com/englishtutor/
-│       ├── EnglishTutorApplication.java
-│       ├── config/                  CORS + WebClient + LLM settings binding
-│       ├── controller/              TutorController — /api/tutor/*
-│       ├── dto/                     Request/response records
-│       ├── service/                 TutorService, LlmClient (calls the LLM)
-│       └── exception/               Global JSON error handling
+The frontend lives at the repository root; the backend is in `backend/`.
+
+```text
+English-Teacher/
 │
-└── frontend/                        React + TypeScript app
-    └── src/
-        ├── api/tutorApi.ts          Fetch wrapper for the backend
-        ├── hooks/                   useSpeechRecognition, useSpeechSynthesis
-        ├── components/              Tutor, TopicSelector, ConversationView, …
-        └── types.ts
+├── backend/
+│   ├── Dockerfile
+│   ├── pom.xml
+│   └── src/main/
+│       ├── java/com/englishtutor/
+│       │   ├── EnglishTutorApplication.java
+│       │   ├── config/          CorsConfig, LlmProperties, WebClientConfig
+│       │   ├── controller/      TutorController — /api/tutor/*
+│       │   ├── dto/             ChatRequest, ChatResponse, MessageDto, TopicDto
+│       │   ├── service/         LlmClient, TutorService
+│       │   └── exception/       ApiException, GlobalExceptionHandler
+│       └── resources/
+│           └── application.yml
+│
+├── src/
+│   ├── api/tutorApi.ts
+│   ├── components/              ConversationView, MessageBubble, StatusBar, TopicSelector, Tutor
+│   ├── hooks/                   useSpeechRecognition, useSpeechSynthesis
+│   ├── App.tsx / App.css
+│   ├── index.css / main.tsx
+│   ├── types.ts
+│   └── vite-env.d.ts
+│
+├── package.json
+├── vite.config.ts
+├── index.html
+└── .github/workflows/deploy.yml
 ```
 
 ---
 
 ## Prerequisites
 
-- **Java 17+** and **Maven** — for the backend (`java -version`, `mvn -version`)
-- **Node.js 18+** — for the frontend (`node -version`)
-- A free **Groq** API key (or any other OpenAI-compatible provider/key)
-- **Chrome or Edge** to run the app in — best Web Speech API support
+- Java 17+ and Maven (`java -version`, `mvn -version`)
+- Node.js 18+ and npm (`node -version`, `npm -version`)
+- Git
+- A free Groq API key (or any other OpenAI-compatible provider/key)
+- Google Chrome or Microsoft Edge — best Web Speech API support
 
 ---
 
-## Getting a free API key (Groq)
+## Running the Project Locally
 
-1. Go to [console.groq.com](https://console.groq.com) and sign up — no credit
-   card required.
-2. Open **API Keys** in the sidebar → **Create API Key** → copy it immediately
-   (it's shown once).
-3. Groq occasionally retires model names — check
-   [console.groq.com/docs/models](https://console.groq.com/docs/models) if a
-   model ID in this README ever stops working, and swap in whatever's current.
+### 1. Clone the repository
 
----
+```bash
+git clone https://github.com/Ravi16329/English-Teacher.git
+cd English-Teacher
+```
 
-## Running it locally
-
-### 1. Backend (Spring Boot)
+### 2. Run the backend
 
 ```bash
 cd backend
 ```
 
-Set these environment variables in the same terminal before starting the app:
+Set these environment variables in the same terminal before starting the app.
 
 **PowerShell**
 ```powershell
 $env:LLM_API_KEY="gsk_your_key_here"
 $env:LLM_BASE_URL="https://api.groq.com/openai/v1"
 $env:LLM_MODEL="openai/gpt-oss-20b"
+$env:CORS_ALLOWED_ORIGINS="http://localhost:5173"
 ```
 
 **Command Prompt**
@@ -113,59 +147,100 @@ $env:LLM_MODEL="openai/gpt-oss-20b"
 set LLM_API_KEY=gsk_your_key_here
 set LLM_BASE_URL=https://api.groq.com/openai/v1
 set LLM_MODEL=openai/gpt-oss-20b
+set CORS_ALLOWED_ORIGINS=http://localhost:5173
 ```
 
 **macOS/Linux**
 ```bash
-export LLM_API_KEY=gsk_your_key_here
-export LLM_BASE_URL=https://api.groq.com/openai/v1
-export LLM_MODEL=openai/gpt-oss-20b
+export LLM_API_KEY="gsk_your_key_here"
+export LLM_BASE_URL="https://api.groq.com/openai/v1"
+export LLM_MODEL="openai/gpt-oss-20b"
+export CORS_ALLOWED_ORIGINS="http://localhost:5173"
 ```
 
-Then run:
+Then start Spring Boot:
+
 ```bash
 mvn spring-boot:run
 ```
 
-The API starts on **http://localhost:8080**. Environment variables reference
-(see `src/main/resources/application.yml`):
+The backend runs on **http://localhost:8080**. Keep this terminal running.
 
-| Variable                | Default                          | Purpose                                    |
-|-------------------------|-----------------------------------|---------------------------------------------|
-| `LLM_API_KEY`           | *(required)*                      | API key for your LLM provider               |
-| `LLM_MODEL`             | `gpt-4o-mini`                      | Model name to request                       |
-| `LLM_BASE_URL`          | `https://api.openai.com/v1`       | Any OpenAI-compatible chat completions API  |
-| `CORS_ALLOWED_ORIGINS`  | `http://localhost:5173`           | Comma-separated frontend origin(s)          |
+> Without `LLM_API_KEY` set, `/api/tutor/chat` returns a clear `503` error explaining the AI isn't configured, instead of failing silently.
 
-Without `LLM_API_KEY` set, `/api/tutor/chat` returns a clear `503` error
-explaining the AI isn't configured, instead of failing silently.
+### 3. Run the frontend
 
-> **Note:** the values above default to OpenAI. To use Groq's free tier
-> (as this project is currently configured), you must set `LLM_BASE_URL` and
-> `LLM_MODEL` as shown, not just `LLM_API_KEY`.
-
-### 2. Frontend (React)
-
-Open a **second terminal** (leave the backend running in the first):
+Open a **second terminal**, staying at the project root:
 
 ```bash
-cd frontend
-cp .env.example .env   # points at http://localhost:8080/api by default
+cd English-Teacher
 npm install
 npm run dev
 ```
 
-Open **http://localhost:5173** in Chrome or Edge, allow microphone access,
-pick a topic, and tap the mic button.
+The frontend runs on **http://localhost:5173**. Open it in Chrome or Edge and allow microphone access when prompted.
 
 ---
 
-## API reference
+## Environment Variables
 
-**`GET /api/tutor/topics`**
-Returns the list of conversation topics and their opening greeting.
+| Variable | Default | Purpose |
+|---|---|---|
+| `LLM_API_KEY` | *(required)* | API key for your LLM provider |
+| `LLM_BASE_URL` | `https://api.openai.com/v1` | Any OpenAI-compatible chat completions endpoint |
+| `LLM_MODEL` | `gpt-4o-mini` | Model name to request |
+| `LLM_PROVIDER` | — | LLM provider identifier |
+| `LLM_TIMEOUT_SECONDS` | `20` | Max time to wait for an LLM response before returning a clean error |
+| `CORS_ALLOWED_ORIGINS` | `http://localhost:5173` | Comma-separated frontend origin(s) allowed to call the backend |
+
+Example:
+
+```env
+LLM_API_KEY=gsk_your_key_here
+LLM_BASE_URL=https://api.groq.com/openai/v1
+LLM_MODEL=openai/gpt-oss-20b
+LLM_PROVIDER=openai
+LLM_TIMEOUT_SECONDS=20
+CORS_ALLOWED_ORIGINS=http://localhost:5173
+```
+
+---
+
+## Getting a Free Groq API Key
+
+1. Go to [console.groq.com](https://console.groq.com) and sign up — no credit card required.
+2. Open **API Keys** in the sidebar → **Create API Key** → copy it immediately (it's shown once).
+3. Groq occasionally retires model names — check [console.groq.com/docs/models](https://console.groq.com/docs/models) if a model ID here ever stops working, and swap in whatever's current.
+
+---
+
+## Switching LLM Providers
+
+The backend calls a plain OpenAI-compatible `/chat/completions` endpoint, so switching providers is a config change only — no code edits needed. Just update `LLM_BASE_URL`, `LLM_MODEL`, and `LLM_API_KEY`.
+
+| Provider | Free? | Base URL | Example model |
+|---|---|---|---|
+| Groq | Yes, no card | `https://api.groq.com/openai/v1` | `openai/gpt-oss-20b` |
+| OpenAI | Paid | `https://api.openai.com/v1` | `gpt-4o-mini` |
+| Ollama (local) | Yes, always | `http://localhost:11434/v1` | whatever model you've pulled |
+
+---
+
+## Security
+
+- Never commit a real API key to GitHub — always use the placeholder `gsk_your_key_here` in docs, and keep real keys only in environment variables.
+- The API key must stay on the backend; it should never be exposed in the React frontend.
+- For production, the key is stored as an environment variable on the backend hosting platform (Render).
+
+---
+
+## API Reference
+
+**`GET /api/tutor/topics`** — Returns the available conversation topics and their opening greeting.
 
 **`POST /api/tutor/chat`**
+
+Request:
 ```json
 {
   "userText": "Yesterday I go to market",
@@ -176,59 +251,54 @@ Returns the list of conversation topics and their opening greeting.
   ]
 }
 ```
+
+Response:
 ```json
 {
   "reply": "That sounds nice! What did you buy at the market?",
-  "correction": "Yesterday I went to the market",
-  "correctionExplanation": "Use the past tense 'went' for things that already happened.",
+  "correction": "Yesterday I went to the market.",
+  "correctionExplanation": "Use the past tense 'went' for an action that happened yesterday.",
   "pronunciationTip": null
 }
 ```
 
-**`GET /api/tutor/health`** — simple liveness check.
+**`GET /api/tutor/health`** — Simple liveness check.
 
 ---
 
-## Switching LLM providers
+## Deployment
 
-Because the backend calls a plain OpenAI-compatible `/chat/completions`
-endpoint, switching providers is a config change only — no Java code edits
-needed. Just update `LLM_BASE_URL`, `LLM_MODEL`, and `LLM_API_KEY`:
+**Frontend** — Deployed to GitHub Pages at https://ravi16329.github.io/English-Teacher/. GitHub Actions automatically builds and deploys it on every push to `main`.
 
-| Provider | Free? | Base URL | Example model |
-|---|---|---|---|
-| Groq | Yes, no card | `https://api.groq.com/openai/v1` | `openai/gpt-oss-20b` |
-| OpenAI | Paid | `https://api.openai.com/v1` | `gpt-4o-mini` |
-| Ollama (local) | Yes, always | `http://localhost:11434/v1` | whatever model you've pulled |
+**Backend** — Deployed to Render (Docker, Java 17) at https://english-teacher-b1a7.onrender.com, configured with `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL`, `LLM_PROVIDER`, and `CORS_ALLOWED_ORIGINS`.
 
 ---
 
-## Adding persistence later
+## Browser Support
 
-Scope for this version intentionally excludes accounts and saved history. If
-that changes, the natural next steps are:
-- Add a `users` table + Spring Security/JWT for accounts
-- Add a `conversations` / `messages` table (PostgreSQL) and a
-  `ConversationController` to save/list past sessions
-- Load a learner's history into the frontend on login instead of starting
-  every session from a blank slate
-
-None of the current API contracts would need to change for this — `history`
-is already passed per-request, so the backend doesn't need to know whether it
-came from React state or a database.
+Uses the browser's Web Speech API. For the best experience, use Google Chrome or Microsoft Edge. Microphone permission is required for speech recognition, and recognition/synthesis quality depends on the browser and operating system — this is a browser platform constraint, not something the app controls.
 
 ---
 
-## Known limitations
+## Limitations
 
-- Speech recognition/synthesis quality depends entirely on the browser — this
-  is a browser platform constraint, not something the app can control.
-- The LLM call is synchronous; a slow provider response makes the learner
-  wait. `LLM_TIMEOUT_SECONDS` caps this (default 20s) and surfaces a clean
-  error rather than hanging.
-- Free-tier LLM models occasionally get renamed or retired by the provider.
-  If chat requests suddenly start failing with a 404, check the provider's
-  current model list first.
+- No user authentication, no database — conversations are not permanently stored, and refreshing the page starts a new conversation.
+- Speech recognition depends on browser support.
+- The LLM call is synchronous, so a slow provider response makes the learner wait (capped by `LLM_TIMEOUT_SECONDS`).
+- The Render free-tier backend may take some time to wake up after inactivity.
+- Free-tier AI models and limits may change over time — if chat requests suddenly start failing with a 404, check the provider's current model list first.
+
+---
+
+## Future Improvements
+
+- User authentication and profiles
+- Persistent conversation history (e.g. a `users` table + Spring Security/JWT, a `conversations`/`messages` table in PostgreSQL)
+- Progress tracking, vocabulary tracking, pronunciation scoring, speaking performance analytics
+- Multiple AI model support
+- Mobile application
+
+The current API is already designed for this: `history` is passed per request, so the backend doesn't need to know whether it came from React state or a database.
 
 ---
 
