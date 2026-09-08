@@ -1,0 +1,24 @@
+server:
+  port: ${PORT:8080}
+
+spring:
+  application:
+    name: english-tutor-api
+
+# CORS: the React dev server origin(s) allowed to call this API
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+
+# LLM provider configuration.
+# Set these as environment variables — never commit real keys.
+llm:
+  provider: ${LLM_PROVIDER:openai}
+  api-key: ${LLM_API_KEY:}
+  base-url: ${LLM_BASE_URL:https://api.groq.com/openai/v1}
+  model: ${LLM_MODEL:gpt-4o-mini}
+  timeout-seconds: ${LLM_TIMEOUT_SECONDS:20}
+
+logging:
+  level:
+    com.englishtutor: INFO
