@@ -9,6 +9,7 @@ An AI-powered English speaking practice web application that helps learners impr
 **Backend:** https://english-teacher-b1a7.onrender.com
 
 > The backend is hosted on Render's free tier and may take a short time to wake up after a period of inactivity.
+wait for few minutes to start backend.
 
 ---
 
