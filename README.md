@@ -291,18 +291,17 @@ Uses the browser's Web Speech API. For the best experience, use Google Chrome or
 
 ---
 
-## Future Improvements
+## Future Improvements 
 
 - User authentication and profiles
 - Persistent conversation history (e.g. a `users` table + Spring Security/JWT, a `conversations`/`messages` table in PostgreSQL)
 - Progress tracking, vocabulary tracking, pronunciation scoring, speaking performance analytics
 - Multiple AI model support
 - Mobile application
+- Many languages
 
 The current API is already designed for this: `history` is passed per request, so the backend doesn't need to know whether it came from React state or a database.
 
 ---
 
-## License
 
-Private project. Not intended for public redistribution.
